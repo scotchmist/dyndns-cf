@@ -41,8 +41,8 @@ if __name__ == "__main__":
 	email = "address@example.co.uk"
 	tkn = "Your Cloudflare API token goes here."
 	apiaddr = "https://www.cloudflare.com/api_json.html"
-	host = "%s.%s" % (subdomain, domain)
-	ip = urllib2.urlopen("http://icanhazip.com").read()[:-1]
+	host = "%s.%s" % (subdomain.lower(), domain.lower())
+	ip = urllib2.urlopen("http://ipv4.icanhazip.com").read()[:-1]
 	current_ip = socket.gethostbyname(host)
 
 	if ip == current_ip:
