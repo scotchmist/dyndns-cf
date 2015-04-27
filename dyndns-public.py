@@ -3,49 +3,50 @@
 import urllib2, json, socket
 from urllib import urlencode
 
-def setipforsubdomain(subdomain, domain, email, tkn, apiaddr, ip):
-	dictionary = dict([
-		('a', 'rec_edit'), 
-		('type', 'A'), 
-		('z', domain), 
-		('tkn', tkn), 
-		('email', email), 
-		('name', subdomain), 
-		('content', ip), 
-		('service_mode', '0'), 
-		('ttl', '1')])
+def get_request(domain, headers, URL=None):
+	request = urllib2.Request("https://api.cloudflare.com/client/v4/zones{}".format(URL))
+	[request.add_header(key, val) for key, val in headers.iteritems()]
+	try:
+		response = json.loads(urllib2.urlopen(request).read())
+	except urllib2.HTTPError as h:
+		return h
+	return response
 
-	rec_all = urllib2.urlopen(apiaddr, urlencode(dict([
-		('a', 'rec_load_all'), 
-		('tkn', tkn), 
-		('email', email), 
-		('z', domain)])))
 
-	rec_all = json.loads(rec_all.read())
-	for dicts in rec_all['response']['recs']['objs']:
-		if dicts['name'] == host:
-			id = dicts['rec_id']
-		else:
-			pass
+def set_new_ip(record_details, headers, ip, URL=None):
+	record_details['result'][0]['content'] = ip
+	data = record_details['result'][0]
 
-	dictionary['id'] = id
-	rec_edit = urllib2.urlopen(apiaddr, urlencode(dictionary))
-	print urlencode(dictionary)
-	print rec_edit.read()
+	opener = urllib2.build_opener(urllib2.HTTPHandler)
+	request = urllib2.Request('https://api.cloudflare.com/client/v4/zones{}'.format(URL), json.dumps(data))
+	[request.add_header(key, val) for key, val in headers.iteritems()]
+	request.get_method = lambda: 'PUT'
+	opener.open(request)
+
 
 
 if __name__ == "__main__":
-
+	#The following values need to be set.
 	subdomain = "home"
 	domain = "example.co.uk"
-	email = "address@example.co.uk"
-	tkn = "Your Cloudflare API token goes here."
-	apiaddr = "https://www.cloudflare.com/api_json.html"
+	email = "example@example.co.uk"
+	tkn = "Your CloudFlare API key goes here."
+
 	host = "%s.%s" % (subdomain.lower(), domain.lower())
-	ip = urllib2.urlopen("http://ipv4.icanhazip.com").read()[:-1]
+	ip = urllib2.urlopen("http://ipv4.icanhazip.com").read().strip('\n')
 	current_ip = socket.gethostbyname(host)
 
-	if ip == current_ip:
-		pass
+	headers = { 'X-Auth-Email': email,
+				'X-Auth-Key': tkn,
+				'Content-Type': 'application/json' }
+
+	try:
+		zone_id = get_request(domain, headers, "?name={}".format(domain))['result'][0]['id']
+		record_id = get_request(domain, headers, "/{}/dns_records?name={}".format(zone_id, host))['result'][0]['id']
+	except:
+		raise
+
+	if ip != current_ip:
+		set_new_ip(record_details, headers, ip, "/{}/dns_records/{}".format(zone_id, record_id))
 	else:
-		setipforsubdomain(subdomain, domain, email, tkn, apiaddr, ip)
+		pass
