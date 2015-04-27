@@ -9,7 +9,7 @@ def get_request(domain, headers, URL=None):
 	try:
 		response = json.loads(urllib2.urlopen(request).read())
 	except urllib2.HTTPError as h:
-		return h
+		raise h
 	return response
 
 
@@ -21,7 +21,7 @@ def set_new_ip(record_details, headers, ip, URL=None):
 	request = urllib2.Request('https://api.cloudflare.com/client/v4/zones{}'.format(URL), json.dumps(data))
 	[request.add_header(key, val) for key, val in headers.iteritems()]
 	request.get_method = lambda: 'PUT'
-	opener.open(request)
+	print opener.open(request).read()
 
 
 
@@ -30,7 +30,7 @@ if __name__ == "__main__":
 	subdomain = "home"
 	domain = "example.co.uk"
 	email = "example@example.co.uk"
-	tkn = "Your CloudFlare API key goes here."
+	tkn = "Your CloudFlare API token goes here."
 
 	host = "%s.%s" % (subdomain.lower(), domain.lower())
 	ip = urllib2.urlopen("http://ipv4.icanhazip.com").read().strip('\n')
@@ -40,13 +40,11 @@ if __name__ == "__main__":
 				'X-Auth-Key': tkn,
 				'Content-Type': 'application/json' }
 
-	try:
+	if ip == current_ip:
 		zone_id = get_request(domain, headers, "?name={}".format(domain))['result'][0]['id']
-		record_id = get_request(domain, headers, "/{}/dns_records?name={}".format(zone_id, host))['result'][0]['id']
-	except:
-		raise
+		record_details = get_request(domain, headers, "/{}/dns_records?name={}".format(zone_id, host))
 
-	if ip != current_ip:
+		record_id = record_details['result'][0]['id']
 		set_new_ip(record_details, headers, ip, "/{}/dns_records/{}".format(zone_id, record_id))
 	else:
 		pass
