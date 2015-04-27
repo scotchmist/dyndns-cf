@@ -21,7 +21,7 @@ def set_new_ip(record_details, headers, ip, URL=None):
 	request = urllib2.Request('https://api.cloudflare.com/client/v4/zones{}'.format(URL), json.dumps(data))
 	[request.add_header(key, val) for key, val in headers.iteritems()]
 	request.get_method = lambda: 'PUT'
-	print opener.open(request).read()
+	opener.open(request)
 
 
 
