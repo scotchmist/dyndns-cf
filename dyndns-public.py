@@ -40,7 +40,7 @@ if __name__ == "__main__":
 				'X-Auth-Key': tkn,
 				'Content-Type': 'application/json' }
 
-	if ip == current_ip:
+	if ip != current_ip:
 		zone_id = get_request(domain, headers, "?name={}".format(domain))['result'][0]['id']
 		record_details = get_request(domain, headers, "/{}/dns_records?name={}".format(zone_id, host))
 
